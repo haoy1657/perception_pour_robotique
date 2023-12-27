@@ -1,0 +1,78 @@
+m_p=[]; 
+list_rt={};
+cor_monde=[10 5 0
+    10 20 0
+    25 5 0
+    25 20 0];
+[num_rows, num_cols] = size(u_m);
+um_plot=[];
+vm_plot=[];
+um_e_plot=[];
+vm_e_plot=[];
+
+for i=1:num_cols
+    A=[];
+    for j=1:num_rows
+        Ai=[cor_monde(j,1) cor_monde(j,2)  1 0  0 0 -u_m(j,i)*cor_monde(j,1) -u_m(j,i)*cor_monde(j,2)  -u_m(j,i) 
+            0  0 0 cor_monde(j,1) cor_monde(j,2)  1 -v_m(j,i)*cor_monde(j,1) -v_m(j,i)*cor_monde(j,2)  -v_m(j,i)];
+        A=[A;Ai];
+        % disp(Ai);
+    end
+    [U,S,V] = svd(vpa(A));
+    % [U,S,V]=[vpa(U),vpa(S),vpa(V)];
+    % disp(V);
+    L = V(:,end-1);
+    H=reshape(L,3,3)';
+    kinvers_H=inv(K)*H;
+    R1=kinvers_H(:,1);
+    R2=kinvers_H(:,2);
+    T=kinvers_H(:,3);
+    R3=cross(R1,R2);
+    R=[R1,R2,R3];
+    facteur_echell=det(R);
+    a = nthroot(det, 4) ;
+    RT=[R1/a,R2/a,R3/a^2,T/a];
+    list_rt{i}=RT;
+    % disp(list_rt{8});
+
+end
+%verification 
+for i=1:num_cols
+    rt=list_rt{i};
+    for j=1:num_rows
+        u_v_estimation=K*rt*[cor_monde(j,1),cor_monde(j,2),cor_monde(j,3),1]';
+        u_v_estimation=u_v_estimation/u_v_estimation(end);
+        % disp(u_v_estimation);
+        % 实际位置
+        disp('Real Position pixel:');
+        disp(['u_m(', num2str(i), ',', num2str(j), ') = ', num2str(u_m(j, i))]);
+        disp(['v_m(', num2str(i), ',', num2str(j), ') = ', num2str(v_m(j, i))]);
+        um_plot=[um_plot,u_m(j, i)];
+        vm_plot=[vm_plot,v_m(j, i)];
+        um_e_plot=[um_e_plot,double(u_v_estimation(1))];
+        vm_e_plot=[vm_e_plot,double(u_v_estimation(2))];
+
+        % 估计位置
+        disp('Estimated Position pixel:');
+        disp(u_v_estimation);
+        % disp('u_estimation = ', u_v_estimation(1));
+        % disp('v_estimation = ', u_v_estimation(2));
+    end
+
+
+end
+figure;
+scatter(um_plot, vm_plot, 50, 'r', 'filled');  % 'r' 表示红色，'filled' 表示填充点
+hold on;  % 保持图形，以便在同一图上添加第二组点
+
+% 绘制第二组点（蓝色）
+scatter(um_e_plot, vm_e_plot, 50, 'b', 'filled');  % 'b' 表示蓝色，'filled' 表示填充点
+
+title('Points with Different Colors');
+xlabel('X pixel');
+ylabel('Y pixel');
+
+% 添加图例
+legend('real pixel positon ', 'estimated pixel position');  
+
+
